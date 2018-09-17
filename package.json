@@ -5,15 +5,15 @@
   "main": "index.js",
   "repository": {
     "type": "git",
-    "url": "git+https://ciffi@github.com/ciffi/ciffi-js.git"
+    "url": "git+https://github.com/marcocastignoli/ciffi-js.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/ciffi/ciffi-js/issues"
+    "url": "https://github.com/marcocastignoli/ciffi-js/issues"
   },
-  "homepage": "https://github.com/ciffi/ciffi-js#readme",
+  "homepage": "https://github.com/marcocastignoli/ciffi-js#readme",
   "devDependencies": {
     "lerna": "^2.11.0"
   },
