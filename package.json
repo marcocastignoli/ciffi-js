@@ -1,0 +1,24 @@
+{
+  "name": "ciffi-frontend-generator",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://ciffi@github.com/ciffi/ciffi-js.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ciffi/ciffi-js/issues"
+  },
+  "homepage": "https://github.com/ciffi/ciffi-js#readme",
+  "devDependencies": {
+    "lerna": "^2.11.0"
+  },
+  "scripts": {
+    "test": "node ./test.js",
+    "lerna": "./node_modules/.bin/lerna $1"
+  }
+}
