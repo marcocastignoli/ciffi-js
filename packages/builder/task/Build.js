@@ -1,82 +1,94 @@
-const chalk = require('chalk');
-const fileExists = require('file-exists');
-const spawnCommand = require('spawn-command')
-const path = require('path');
-const ConfigFile = path.join(process.cwd(), '.ciffisettings');
-const Assets = require('./Assets');
-const Config = require('./Config');
+let chalk = require('chalk');
+let fileExists = require('file-exists');
+let exec = require('child_process').exec;
+let Log = require('single-line-log').stdout;
+let ConfigFile = process.env.PWD + '/.ciffisettings';
 
-const Errors = {
-  build: new Error('🏗  frontend build error!!')
-};
+let Build = (function (env) {
+	
+	let _CONFIG;
+	
+	function Build() {
+		this.build = build
+		if (fileExists.sync(ConfigFile)) {
+			_CONFIG = require(ConfigFile);
+		} else {
+			console.log(chalk.red.bold('☠️  Project build failed:') + ' ' + chalk.blue('can\'t find .ciffisettings file ☠️'));
+			return console.log('');
+		}
+		
+		if (fileExists.sync(process.env.PWD + '/src/scripts/config/env/' + env + '.js')) {
+			this.build();
+		} else {
+			console.log(chalk.red.bold('☠️  Project build failed:') + ' ' + chalk.blue('can\'t find src/scripts/config/env/' + env + '.js file ☠️'));
+			return console.log('');
+		}
 
-class Build {
-  
-  constructor(env) {
-    
-    if (fileExists.sync(ConfigFile)) {
-      this.config = require(ConfigFile);
-      this.env = env;
-      this.init();
-    } else {
-      console.error(chalk.red.bold('☠️ Project build failed:') + ' ' + chalk.blue('can\'t find .ciffisettings file ☠️'));
-      console.error(Errors.build.message);
-      console.error('');
-      return process.exit(1);
-    }
-  }
-  
-  init() {
-    const assetPath = process.platform === 'win32' ? this.config.assetsPath.replace(/\//g, '\\') : this.config.assetsPath;
-    const assetPathName = this.config.assetsPathName;
-    const autoprefixerConfig = this.config.autoprefixer || 'last 12 versions';
-    const concat = ' && ';
-    const cleanDist = process.platform === 'win32' ? 'rd / s / q ' + assetPath : 'rm -rf ' + assetPath + '/*';
-    const css = `${path.join('node_modules', '.bin', 'node-sass')} ${path.join(assetPathName, 'styles', 'main.scss')} ${path.join(assetPath, this.config.stylesOutputName)}`;
-    const autoprefixer = `${path.join('node_modules', '.bin', 'postcss')} --use autoprefixer --autoprefixer.browsers "${autoprefixerConfig}" -o ${path.join(assetPath, this.config.stylesOutputName)} ${path.join(assetPath, this.config.stylesOutputName)}`;
-    const cleancss = `${path.join('node_modules', '.bin', 'cleancss')} -o ${path.join(assetPath, this.config.stylesOutputName,)} ${path.join(assetPath, this.config.stylesOutputName,)}`;
-    const styles = css + concat + autoprefixer + concat + cleancss;
-    
-    const bundlerJs = {
-      webpack: `${path.join('node_modules', '.bin', 'webpack')} --config build.config.js --progress`,
-      parcel: `${path.join('node_modules', '.bin', 'parcel')} build ${path.join(assetPathName, 'scripts', 'main.js')} -d ${assetPath} --public-url ${assetPath} --no-source-maps`
-    };
-    
-    const js = bundlerJs[this.config.bundle];
-    
-    new Config(this.env, () => {
-      
-      const spawnProcess = spawnCommand(cleanDist + concat + styles + concat + js);
-      
-      spawnProcess.stdout.on('data', (res) => {
-        if (res.indexOf('ERROR in') >= 0 || res.indexOf('Error:') >= 0 || res.indexOf('error ') >= 0 || res.indexOf('Errors:') >= 0) {
-          console.error(new Error(res));
-          return process.exit(1);
-        } else if (res.indexOf('Built at: ') >= 0 || res.indexOf('Built in ') >= 0 || res.indexOf('.css') > 0 || res.indexOf('CSS') > 0) {
-          console.log('🏗' + chalk.blue(res));
-        }
-      });
-      
-      spawnProcess.stderr.on('data', (res) => {
-        if (res.indexOf('ERROR in') >= 0 || res.indexOf('Error:') >= 0 || res.indexOf('error ') >= 0 || res.indexOf('Errors:') >= 0) {
-          console.error(new Error(res));
-          return process.exit(1);
-        }
-      });
-      
-      spawnProcess.on('close', (res) => {
-        if (res === 0) {
-          console.log(chalk.blue('🏗 Project build for ') + this.env + chalk.blue(' in ') + assetPath + ' ' + chalk.green.bold(' OK'));
-          new Assets();
-        } else if (res === null) {
-          console.error(new Error(res));
-          return process.exit(1);
-        }
-        console.log('');
-      });
-      
-    });
-  }
-}
+		this.getStatus = getStatus
+		
+	}
+
+	function getStatus() {
+		self = this
+		return new Promise(function(resolve, reject){
+			self._process.on('close', function(){
+				self._asset_process.on('close', function(){
+					resolve('Fatto')
+				})
+			})
+		})
+	}
+	
+	function build() {
+		let _assetPath = _CONFIG.assetsPath;
+		let _assetPathName = _CONFIG.assetsPathName;
+		let _autoprefixerConfig = _CONFIG.autoprefixer || 'last 12 versions';
+		let _concat = ' && ';
+		let _createConfig = 'cp ' + _assetPathName + '/scripts/config/env/' + env + '.js ' + _assetPathName + '/scripts/config/config.js';
+		let _cleanDist = 'rm -rf ' + _assetPath + '/*';
+		let _css = './node_modules/.bin/node-sass ' + _assetPathName + '/styles/main.scss ' + _assetPath + '/' + _CONFIG.stylesOutputName;
+		let _autoprefixer = './node_modules/.bin/postcss --use autoprefixer --autoprefixer.browsers \'' + _autoprefixerConfig + '\' -o ' + _assetPath + '/' + _CONFIG.stylesOutputName + ' ' + _assetPath + '/' + _CONFIG.stylesOutputName;
+		let _cleancss = './node_modules/.bin/cleancss -o ' + _assetPath + '/' + _CONFIG.stylesOutputName + ' ' + _assetPath + '/' + _CONFIG.stylesOutputName;
+		let _styles = _css + _concat + _autoprefixer + _concat + _cleancss;
+		let _js = './node_modules/.bin/webpack --config build.config.js --progress';
+		
+		exec(_createConfig);
+		
+		console.log('');
+		console.log(chalk.blue('🦄 Generate config for ') + env + ' ' + chalk.green.bold(' OK'));
+		console.log('');
+		console.log('');
+		
+		this._process = exec(_cleanDist + _concat + _styles + _concat + _js);
+		
+		this._process.stdout.on('data', function (res) {
+			if (res.indexOf('ERROR in') >= 0 || res.indexOf('Error:') >= 0) {
+				console.log(chalk.red(res));
+			} else {
+				Log('🏗  ' + chalk.blue(res));
+			}
+		});
+		
+		this._process.stderr.on('data', function (res) {
+			if (res.indexOf('ERROR in') >= 0 || res.indexOf('Error:') >= 0) {
+				console.log(chalk.red(res));
+			} else {
+				Log('🏗  ' + chalk.blue(res));
+			}
+		});
+		
+		self = this
+		this._process.on('close', function (res) {
+			if (res === 0) {
+				Log(chalk.blue('🏗  Project build for ') + env + chalk.blue(' in ') + _assetPath + ' ' + chalk.green.bold(' OK'));
+				let assetsInstance = require('./app-assets');
+				self._asset_process = assetsInstance.getStatus()
+			}
+			console.log('');
+		});
+	}
+	
+	return new Build();
+});
 
 module.exports = Build;

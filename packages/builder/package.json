@@ -1,11 +1,11 @@
 {
-  "name": "@ciffi-js/builder",
+  "name": "@marcocastignoli/builder",
   "version": "3.0.2",
   "description": "Builder for ciffi js webbpack project",
   "main": "./builder.js",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ciffi/ciffi-js/"
+    "url": "git+https://github.com/marcocastignoli/ciffi-js/"
   },
   "author": {
     "name": "Ciffi"
@@ -22,7 +22,7 @@
     "javascript builder"
   ],
   "license": "MIT",
-  "homepage": "https://github.com/ciffi/ciffi-js",
+  "homepage": "https://github.com/marcocastignoli/ciffi-js",
   "preferGlobal": false,
   "bin": {
     "ciffi-builder": "./builder.js"
