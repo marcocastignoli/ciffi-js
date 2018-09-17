@@ -1,77 +1,78 @@
 #! /usr/bin/env node
-const meow = require('meow');
-const chalk = require('chalk');
-const fileExists = require('file-exists');
-const path = require('path');
-const ConfigFile = path.resolve(process.cwd(), '.ciffisettings');
-const { Assets, Build, Config, Dev } = require('./task');
 
+let meow = require('meow');
+let chalk = require('chalk');
+let pkg = require('./package.json');
+let exec = require('child_process').exec;
+let fileExists = require('file-exists');
+let ConfigFile = process.env.PWD + '/.ciffisettings';
 
-class Builder {
-  
-  constructor() {
-    
-    const cli = meow();
-    
-    const opts = cli.flags;
-    const args = cli.input;
-    const cmd = args[0];
-    
-    Object.keys(opts).forEach((key) => {
-      const legacyKey = key.replace(/[A-Z]/g, (m) => {
-        return '-' + m.toLowerCase();
-      });
-      
-      opts[legacyKey] = opts[key];
-    });
-    
-    this.init(cmd, opts);
-  }
-  
-  init(cmd, opts) {
-    
-    if (cmd) {
-      
-      let env = typeof opts.env === 'string' ? opts.env : false;
-      let devEnv = typeof opts.env === 'string' ? opts.env : false;
-      
-      if (!env) {
-        env = fileExists.sync(ConfigFile) && require(ConfigFile).defaultBuildEnv ? require(ConfigFile).defaultBuildEnv : 'local';
-        devEnv = fileExists.sync(ConfigFile) && require(ConfigFile).defaultDevEnv ? require(ConfigFile).defaultDevEnv : 'dev';
-      }
-      
-      switch (cmd) {
-        case 'start':
-          new Dev(devEnv, true);
-          break;
-        case 'build':
-          new Build(env);
-          break;
-        case 'dev':
-          new Dev(devEnv);
-          break;
-        case 'config':
-          new Config(env);
-          break;
-        case 'assets':
-          new Assets();
-          break;
-        default:
-          this.showCommandErrorMessage();
-          break;
-      }
-    }
-    
-  }
-  
-  showCommandErrorMessage() {
-    console.log('');
-    console.log('');
-    console.log(chalk.red.bold('Command not found'));
-    console.log('');
-    console.log(chalk.blue('ciffi -h') + chalk.green(' -- commands list --'));
-    console.log('');
-  }
+let cli = meow({
+	pkg: pkg
+});
+
+let opts = cli.flags;
+let args = cli.input;
+let cmd = args[0];
+
+pkg = cli.pkg;
+
+Object.keys(opts).forEach(function (key) {
+	let legacyKey = key.replace(/[A-Z]/g, function (m) {
+		return '-' + m.toLowerCase();
+	});
+	
+	opts[legacyKey] = opts[key];
+});
+
+let _process = exec('npm config get prefix');
+
+_process.stdout.on('data', function (path) {
+	let _modulePath = path.trim();
+	
+	start(_modulePath);
+});
+
+function start() {
+	if (!cmd) {
+		if (opts.v) {
+			console.log(chalk.magenta.bold(pkg.version));
+		} else if (opts.a) {
+			console.log(chalk.blue(pkg.author.name));
+		} else {
+			showCommandErrorMessage();
+		}
+	} else {
+		
+		let _cmd = cmd;
+		let _env = fileExists.sync(ConfigFile) && require(ConfigFile).defaultBuildEnv ? require(ConfigFile).defaultBuildEnv : 'local';
+		
+		if (cmd.indexOf('build:') === 0) {
+			_cmd = 'build';
+			_env = cmd.split(':')[1];
+		} else if (opts.env) {
+			_env = opts.env;
+		}
+		
+		switch (_cmd) {
+			case 'build':
+				require('./command/app-build')(_env);
+				break;
+			case 'dev':
+				require('./command/app-dev');
+				break;
+			default:
+				showCommandErrorMessage();
+				break;
+		}
+	}
 }
 
-new Builder();
+function showCommandErrorMessage() {
+	console.log('');
+	console.log('');
+	console.log(chalk.red.bold('Command not found'));
+	console.log('');
+	console.log(chalk.blue('ciffi -h') + chalk.green(' -- commands list --'));
+	console.log('');
+}
